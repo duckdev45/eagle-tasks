@@ -1,0 +1,664 @@
+/* Eagle AI Design System — Tailwind theme bridge (generated).
+ *
+ * `@duckdev45/eagle-component/styles` ships compiled CSS: the token VALUES
+ * (:root / .dark custom properties) plus only the utilities the library itself
+ * uses. For this app's own Tailwind build to understand `bg-surface-raised`,
+ * `text-text-muted`, `zh-heading`, `mono-sm`… it needs the theme NAMES and the
+ * type-scale @utility definitions too. Both are copied verbatim from
+ * eagle-component/src/styles/globals.css — do not hand-edit; re-copy when the
+ * package bumps tokens.
+ */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Fonts */
+  --font-sans: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;
+  --font-display: 'Archivo', 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-zh: 'Noto Sans TC', 'Plus Jakarta Sans', sans-serif;
+
+  /* Radius — 1:1 with Figma Library radius/* */
+  --radius-xxs: 2px; /* micro rung — dense data cells (heatmap/calendar), tight dots/pills */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* Surface */
+  --color-surface-base: var(--surface-base);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-backdrop: var(--surface-backdrop);
+  --color-surface-transparent: var(--surface-transparent);
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-on-primary: var(--text-on-primary);
+  --color-text-on-accent: var(--text-on-accent);
+
+  /* Border */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-raised: var(--border-raised);
+
+  /* Interaction state (row hover/selected) — Figma theme `state/*`. A layer
+     distinct from surface/* elevation: these are transient row-feedback fills,
+     not elevation steps. Same primitive tones as sunken/border-subtle/border-raised,
+     but decoupled so a surface re-point never drags row states with it. */
+  --color-state-row-hover: var(--state-row-hover);
+  --color-state-row-selected: var(--state-row-selected);
+  --color-state-row-selected-hover: var(--state-row-selected-hover);
+
+  /* Primary (Eagle Green) */
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+
+  /* Accent (Earth Orange) */
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+
+  /* Neutral */
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+
+  /* Semantic */
+  --color-success-bold: var(--success-bold);
+  --color-success-mid: var(--success-mid);
+  --color-success-dim: var(--success-dim);
+  --color-danger-bold: var(--danger-bold);
+  --color-danger-mid: var(--danger-mid);
+  --color-danger-dim: var(--danger-dim);
+  --color-warning-bold: var(--warning-bold);
+  --color-warning-mid: var(--warning-mid);
+  --color-warning-dim: var(--warning-dim);
+  --color-info-bold: var(--info-bold);
+  --color-info-mid: var(--info-mid);
+  --color-info-dim: var(--info-dim);
+
+  /* Brand AI (magic) */
+  --color-brand-ai: var(--brand-ai);
+  --color-brand-ai-dim: var(--brand-ai-dim);
+
+  /* Categorical (charts / data viz) — retuned 2026-07-22, validated ramp.
+     teal + violet are the only two hues that clear
+     both the CVD/chroma floors AND every locked semantic/brand hue; the old
+     cat-blue (broken dark step) / cat-aqua (was green = verified) / cat-purple
+     (byte-identical to brand-ai) set is retired. */
+  --color-cat-teal: var(--cat-teal);
+  --color-cat-violet: var(--cat-violet);
+
+  /* Focus ring */
+  --color-ring-focus: var(--ring-focus);
+
+  /* Role accents */
+  --color-role-super: var(--role-super);
+  --color-role-super-dim: var(--role-super-dim);
+  --color-role-gc: var(--role-gc);
+  --color-role-sub: var(--role-sub);
+  --color-role-sub-dim: var(--role-sub-dim);
+  --color-role-qc2: var(--role-qc2);
+  --color-role-qc3: var(--role-qc3);
+  --color-role-qc3-dim: var(--role-qc3-dim);
+  --color-role-qm: var(--role-qm);
+  --color-role-qm-dim: var(--role-qm-dim);
+  --color-role-owner: var(--role-owner);
+  --color-role-owner-dim: var(--role-owner-dim);
+  --color-role-admin: var(--role-admin);
+  --color-role-safety: var(--role-safety);
+
+  /* Shadcn mappings */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@utility text-display-2xl {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+@utility text-display-xl {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 37px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+@utility text-display-lg {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 31px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-heading {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-subheading {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-title {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-stamp-verb {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility text-body {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 27px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility text-body-bold {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 27px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility text-body-sm {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility text-body-sm-underline {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-decoration: underline;
+}
+@utility text-body-sm-medium {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility text-body-sm-bold {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility text-label {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility text-label-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility text-label-sm-underline {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-decoration: underline;
+}
+@utility text-overline-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+@utility text-meta {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility text-meta-bold {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+@utility text-overline-xs {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+@utility text-body-xs {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility text-body-xs-bold {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility text-body-xxs {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility text-body-xxs-medium {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility text-body-xxs-bold {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility text-stamp-wordmark {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  line-height: 15px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+@utility text-stamp-date {
+  font-family: var(--font-sans);
+  font-size: 7px;
+  line-height: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+@utility mono-xl {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-xl-bold {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility mono-lg {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-lg-bold {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+@utility mono-md {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-md-bold {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility mono-body {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-body-bold {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility mono-sm {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-sm-bold {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility mono-xs {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 17px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-xs-bold {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility mono-xxs {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility mono-xxs-bold {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility mono-sig-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+@utility mono-sig-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+@utility mono-xxxs {
+  font-family: var(--font-mono);
+  font-size: 6px;
+  line-height: 8px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+@utility zh-display-2xl {
+  font-family: var(--font-zh);
+  font-size: 42px;
+  line-height: 46px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+@utility zh-display-xl {
+  font-family: var(--font-zh);
+  font-size: 34px;
+  line-height: 39px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+@utility zh-display-lg {
+  font-family: var(--font-zh);
+  font-size: 28px;
+  line-height: 33px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility zh-heading {
+  font-family: var(--font-zh);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility zh-subheading {
+  font-family: var(--font-zh);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility zh-title {
+  font-family: var(--font-zh);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-stamp-verb {
+  font-family: var(--font-zh);
+  font-size: 20px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-body {
+  font-family: var(--font-zh);
+  font-size: 19px;
+  line-height: 29px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility zh-body-bold {
+  font-family: var(--font-zh);
+  font-size: 19px;
+  line-height: 29px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-body-sm {
+  font-family: var(--font-zh);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility zh-body-sm-medium {
+  font-family: var(--font-zh);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility zh-body-sm-bold {
+  font-family: var(--font-zh);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-body-sm-underline {
+  font-family: var(--font-zh);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-decoration: underline;
+}
+@utility zh-label {
+  font-family: var(--font-zh);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility zh-label-sm {
+  font-family: var(--font-zh);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility zh-overline-sm {
+  font-family: var(--font-zh);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+@utility zh-label-sm-underline {
+  font-family: var(--font-zh);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-decoration: underline;
+}
+@utility zh-meta {
+  font-family: var(--font-zh);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility zh-meta-bold {
+  font-family: var(--font-zh);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-body-xs {
+  font-family: var(--font-zh);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility zh-body-xs-bold {
+  font-family: var(--font-zh);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-overline-xs {
+  font-family: var(--font-zh);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+@utility zh-body-xxs {
+  font-family: var(--font-zh);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility zh-body-xxs-medium {
+  font-family: var(--font-zh);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility zh-body-xxs-bold {
+  font-family: var(--font-zh);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+@utility zh-stamp-wordmark {
+  font-family: var(--font-zh);
+  font-size: 11px;
+  line-height: 17px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+@utility zh-stamp-date {
+  font-family: var(--font-zh);
+  font-size: 9px;
+  line-height: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}

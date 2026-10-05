@@ -1,0 +1,18 @@
+node_modules
+dist
+*.tsbuildinfo
+
+# env：只追蹤 .env.example
+.env
+.env.local
+.env.*.local
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Claude 暫存輸出（正式版在 gas/Code.gs）
+Claude outputs/
+
+*.log

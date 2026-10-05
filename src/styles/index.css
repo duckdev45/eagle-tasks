@@ -1,0 +1,65 @@
+/* Order matters. Eagle's package CSS goes FIRST (as its README says: before
+   your own styles): it carries its own compiled `@layer utilities`, and
+   whichever utilities block comes later wins on equal specificity. Putting
+   Tailwind after it means this app's responsive classes (`xl:flex` etc.)
+   aren't silently overridden by the library's bare `.hidden` / `.flex`. */
+@import '@duckdev45/eagle-component/styles';
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './eagle-theme.css';
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Infinite canvas dot grid. Size/offset are driven from JS (--grid-size,
+   --grid-x, --grid-y) so the grid pans and zooms with the world. */
+.canvas-grid {
+  background-color: var(--surface-base);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    var(--border-raised) 1px,
+    transparent 1.2px
+  );
+  background-size: var(--grid-size, 24px) var(--grid-size, 24px);
+  background-position: var(--grid-x, 0) var(--grid-y, 0);
+}
+
+.canvas-grid[data-panning='true'] {
+  cursor: grabbing;
+}
+
+/* Spotlight: when a member filter or search focus is active, everything
+   not matched recedes. */
+[data-dim='true'] {
+  opacity: 0.28;
+  filter: saturate(0.4);
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+[data-dim='false'] {
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+
+@keyframes focus-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-300) 55%, transparent); }
+  100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--accent-300) 0%, transparent); }
+}
+.focus-pulse {
+  animation: focus-pulse 900ms ease-out 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-pulse { animation: none; }
+  [data-dim] { transition: none; }
+}
