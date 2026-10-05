@@ -113,19 +113,37 @@ projects = [
 for i, p in enumerate(projects, 1):
     p.setdefault('dueDate', ''); p.setdefault('link', ''); p['order'] = i
 
+
+# ── 複雜度（2026-10-05 依各 repo 程式碼統計；沒有 repo 的依需求範圍估計）────────
+# 1 很小 · 2 小 · 3 中 · 4 大 · 5 極大
+# 看的面向：程式規模（行數）、畫面數、API 數、資料表數、串接的外部服務／系統、權限角色數。
+COMPLEXITY = {
+    'p-pms': (5, '極大：約 11 萬行程式、29 個畫面、138 支 API、57 張資料表；串 LINE、Apple／Google 登入、AWS S3、PPT／Excel 產出；9 種角色權限，是其他產品共用的核心後端。'),
+    'p-erp': (5, '極大：約 7.4 萬行程式、43 個畫面、143 支 API、90 張資料表；要取代 AWM 與 UOF、搬舊資料、內建電子簽核與多公司資料隔離，牽涉財務帳務。'),
+    'p-frweb': (4, '大：約 4.1 萬行程式、24 個畫面、6 種角色；本身沒有後端，全部靠 PMS 的 API；請款金額與品管判定的規則多（約 39 條業務邏輯）。'),
+    'p-web': (4, '大（依需求估計，尚無程式碼）：前台與 SEO、住戶登入會員頁、線上報修、客服後台，還要接 winshop 與 monday 的既有資料；之後要做報修 App 與多租戶。'),
+    'p-vision': (4, '大（依需求估計，本機沒有程式碼）：影像辨識模型、專家複核頁、回訓流程，再加上和 PMS 日報照片串接。'),
+    'p-line': (3, '中：約 1.7 萬行程式、20 個 LINE 畫面、25 支 API；自己不存資料，串 LINE 官方帳號與 LIFF，業務資料都轉給 PMS。'),
+    'p-frapp': (3, '中：約 2.5 萬行程式、15 個畫面；iOS／Android 雙平台上架、離線拍照與本機資料庫、手機上直接產 PDF，資料走 PMS。'),
+    'p-qms': (3, '中：後台約 5.7 萬行程式、31 個頁面，加上廠商 App 約 7 千行；付款明細與 PDF 報表。（後端不在本機，未計入）'),
+    'p-ds': (3, '中：約 2.4 萬行程式的共用元件庫；改一個元件會影響所有產品，需要同時顧好相容性。'),
+    'p-sandbox': (3, '中：程式約 12.8 萬行，但是許多彼此獨立的小原型（日報、預算比較、合約產生器、人資等），單一原型都不大。'),
+    'p-site': (2, '小：約 1 萬行程式、7 個頁面的官網，多語系與聯絡表單。'),
+    'p-waterproof': (2, '小：約 3 千行程式、2 個頁面，含 3D 點位顯示。'),
+    'p-map': (2, '小：約 5 千行程式的單頁工具，資料存在 Google Sheet。'),
+    'p-landing': (1, '很小：約 6 千行程式的靜態行銷網站，沒有後端。'),
+    'p-fms': (1, '很小：只有約 4 千行的專案骨架，5 月後沒有更新。'),
+}
+for p in projects:
+    lvl, note = COMPLEXITY.get(p['id'], (0, ''))
+    p['complexity'] = lvl
+    p['complexityNote'] = note
+
 T = []
 def task(pid, title, who, status='todo', prio='mid', note=''):
     T.append(dict(projectId=pid, title=title, assigneeId=who, status=status, priority=prio, note=note))
 
 # 福懋官網重構
-task('p-web', '新版官網視覺提案（多版色系）', 'm-jared', 'doing', 'high')
-task('p-web', '前台頁面切版與 SEO', 'm-duck', 'doing', 'high')
-task('p-web', '住戶會員頁（登入後：保固、報修紀錄）', 'm-duck', 'todo', 'high')
-task('p-web', '線上報修服務', 'm-duck', 'todo', 'high')
-task('p-web', '客服後台（報修派工、進度追蹤、滿意度電訪）', 'm-lee', 'todo', 'mid')
-task('p-web', 'winshop 後台 / monday 住戶與報修資料整合', 'm-lee', 'todo', 'mid')
-task('p-web', '未來客服／報修 App 規劃', 'm-duck', 'todo', 'low')
-task('p-web', '套裝化：多租戶給其他建商、產品命名', 'm-duck', 'todo', 'low', '命名要和 EagleAI Field、EagleWorks 一致')
 # QMS / 防水 / FMS
 task('p-qms', 'QMS 後台：付款明細、PDF 版面', 'm-duck', 'done', 'mid', '最後更新 2026-08-25')
 task('p-qms', '廠商 App（EagleAi 1.0.2）', 'm-duck', 'done', 'mid', '最後更新 2026-07-17')
@@ -152,25 +170,12 @@ task('p-frapp', '報告組稿與裝置產 PDF', 'm-duck', 'done', 'mid')
 task('p-frapp', '報告編號同步、專案可見範圍', 'm-duck', 'doing', 'high')
 task('p-frapp', '教學影片與帳號轉移', 'm-duck', 'done', 'low')
 # EagleAI Field Web（請款 ABCD 包）
-task('p-frweb', 'A 包：請款包（分層數量表、照片核對、請款證明）', 'm-jared', 'doing', 'high', '看板 A 卡、features/board Jared 85%')
-task('p-frweb', 'B 包：品管包（完工回報、複驗報告）', 'm-lee', 'doing', 'high', '看板 B 卡、QAQC 任務報告 Lee 100%')
-task('p-frweb', 'C 包', '', 'todo', 'mid', '內容與負責人待補')
-task('p-frweb', 'D 包', '', 'todo', 'mid', '內容與負責人待補')
-task('p-frweb', '現場報告列表與 A4 報告', 'm-lee', 'doing', 'mid', 'features/field-report Lee 97%')
-task('p-frweb', '工地資料夾 2（Excel 式表格）', 'm-jared', 'doing', 'mid', '巡檢 Web Jared 78%；PMS 版 site-folder duck 88%')
-task('p-frweb', '平面圖對應（plan-mapping）', 'm-jared', 'doing', 'mid', '與 PMS 共用，Jared 70–100%')
-task('p-frweb', '分層數量表元件（floor-matrix）', 'm-duck', 'done', 'mid', 'PMS 前端 floor-matrix，duck 99%')
 # eagle-vision
 task('p-vision', '複核佇列頁（照片上標記）', 'm-duck', 'todo', 'high')
 task('p-vision', '專家回饋 → 回訓 API', 'm-duck', 'todo', 'mid')
 task('p-vision', '與 PMS 日報照片串接', 'm-duck', 'todo', 'mid')
 
 # ERP
-task('p-erp', '簽呈：電子簽核（版本化表單、簽核流程、一般申請）', 'm-duck', 'doing', 'high', 'modules/platform-approval')
-task('p-erp', '工務：請購 → 採購案 → 詢比議價 → 發包合約', 'm-duck', 'doing', 'high', 'modules/contract、features/procurement')
-task('p-erp', '財務：估驗計價、付款申請 → 傳票，舊帳唯讀查詢', 'm-duck', 'doing', 'mid', 'modules/finance、construction-finance')
-task('p-erp', '人資：組織圖、招募、職缺管理', 'm-lee', 'doing', 'mid', '目前在 sandbox-fullstack features/hrms；hrms repo 剛建立')
-task('p-erp', 'UOF / gcmis 舊資料與附件搬遷', 'm-duck', 'doing', 'mid')
 
 # 品牌
 task('p-site', '多語系、聯絡表單、App 下載連結與 JSON-LD', 'm-duck', 'done', 'mid')
@@ -189,9 +194,14 @@ task('p-sandbox', 'trade-reader', 'm-jared', 'done', 'low')
 task('p-map', '建立 Google Sheet 與 Apps Script', 'm-duck', 'done', 'mid')
 
 tasks = []
+# P0 專案用完整 WBS（seed/wbs.py），其餘專案用上面的 task() 清單。
+from wbs import PLANS, to_tasks
+WBS_TASKS = [t for pid, rows in PLANS.items() for t in to_tasks(pid, rows)]
 for i, t in enumerate(T, 1):
-    t.update(id=f't-{i:02d}', dueDate='', order=i)
+    # 預估天數、不確定性要由負責人自己填，種子資料不代填。
+    t.update(id=f't-{i:02d}', dueDate='', estimateDays=0, uncertainty='', blockedReason='', blockedAt='', startedAt='', doneAt='', order=i)
     tasks.append(t)
+tasks += [{k: v for k, v in t.items() if k != 'legacy'} for t in WBS_TASKS]
 
 def full(rows, cols):
     out = []
@@ -203,8 +213,9 @@ def full(rows, cols):
 COLS = {
     'members': ['id', 'name', 'title', 'expertise', 'email', 'phone', 'line', 'order'],
     'domains': ['id', 'name', 'kind', 'keywords', 'description', 'clientContact', 'leadId', 'color', 'x', 'y', 'order'],
-    'projects': ['id', 'domainId', 'name', 'status', 'priority', 'ownerId', 'summary', 'pitch', 'nextStep', 'tags', 'dueDate', 'link', 'order'],
-    'tasks': ['id', 'projectId', 'title', 'assigneeId', 'status', 'priority', 'dueDate', 'note', 'order'],
+    'projects': ['id', 'domainId', 'name', 'status', 'priority', 'complexity', 'complexityNote', 'ownerId', 'summary', 'pitch', 'nextStep', 'tags', 'dueDate', 'link', 'order'],
+    'tasks': ['id', 'projectId', 'title', 'assigneeId', 'status', 'priority', 'dueDate', 'note',
+              'estimateDays', 'uncertainty', 'blockedReason', 'deps', 'blockedAt', 'startedAt', 'doneAt', 'order'],
 }
 for i, mm in enumerate(members, 1): mm['order'] = i
 seed = {
@@ -233,5 +244,12 @@ pat = re.compile(r"// ── SEED \(GENERATED.*?// ── /SEED ──", re.S)
 if not pat.search(gs):
     raise SystemExit('SEED markers not found in gas/Code.gs')
 gs = pat.sub(lambda _: block, gs)
+wbs_block = ("// ── WBS (GENERATED by seed/build_seed.py from seed/wbs.py — do not hand-edit) ──\n"
+             "var WBS = " + json.dumps(WBS_TASKS, ensure_ascii=False, indent=1) + ";\n"
+             "// ── /WBS ──")
+wpat = re.compile(r"// ── WBS \(GENERATED.*?// ── /WBS ──", re.S)
+if not wpat.search(gs):
+    raise SystemExit('WBS markers not found in gas/Code.gs')
+gs = wpat.sub(lambda _: wbs_block, gs)
 (ROOT / 'gas/Code.gs').write_text(gs, encoding='utf-8')
 print('members', len(members), 'domains', len(domains), 'projects', len(projects), 'tasks', len(tasks))

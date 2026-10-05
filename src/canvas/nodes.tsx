@@ -6,10 +6,12 @@ import {
   FlagIcon,
   HandshakeIcon,
   PlusIcon,
+  ProhibitIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react';
 import { memo, useRef } from 'react';
 
+import { ComplexityPips } from '../components/Complexity';
 import { MemberAvatar } from '../components/MemberAvatar';
 import { cn } from '../lib/cn';
 import {
@@ -18,6 +20,8 @@ import {
   PROJECT_PRIORITY,
   PROJECT_STATUS,
   TASK_STATUS,
+  fmtDays,
+  isBlocked,
   taskUrgency,
   daysUntil,
   shortDate,
@@ -94,6 +98,10 @@ export function Edges({
 interface DomainFrameProps {
   domain: Domain;
   pos: Pos;
+  /** 1-based position in the row. */
+  index: number;
+  /** This frame is the one being dragged (follows the pointer, no slide animation). */
+  dragging: boolean;
   projects: Project[];
   tasks: Task[];
   members: Map<string, Member>;
@@ -111,6 +119,8 @@ interface DomainFrameProps {
 export const DomainFrame = memo(function DomainFrame({
   domain,
   pos,
+  index,
+  dragging,
   projects,
   tasks,
   members,
@@ -178,6 +188,8 @@ export const DomainFrame = memo(function DomainFrame({
           left: pos.x,
           top: pos.y,
           width: FRAME_W,
+          zIndex: dragging ? 20 : undefined,
+          transition: dragging ? 'none' : 'left 200ms ease, top 200ms ease',
           '--tw-ring-color': color,
         } as React.CSSProperties
       }
@@ -196,11 +208,19 @@ export const DomainFrame = memo(function DomainFrame({
       >
         {level === 'far' ? (
           <div className="py-2 text-[52px] leading-[60px] font-bold" style={{ color }}>
+            <span className="text-text-muted mr-3 font-mono">{String(index).padStart(2, '0')}</span>
             {domain.name}
           </div>
         ) : (
           <>
             <div className="flex items-center gap-2">
+              <span
+                className="mono-sm-bold text-text-on-primary flex h-6 min-w-6 shrink-0 items-center justify-center rounded-xs px-1"
+                style={{ background: color }}
+                title={`第 ${index} 欄，拖曳標題可調整順序`}
+              >
+                {String(index).padStart(2, '0')}
+              </span>
               <Badge variant={DOMAIN_KIND[domain.kind].badge} size="sm">
                 {DOMAIN_KIND[domain.kind].label}
               </Badge>
@@ -385,6 +405,7 @@ function ProjectCard({
           <span className="text-text-primary font-medium">{owner?.name ?? '未指定'}</span>
           {project.dueDate && <DueChip due={project.dueDate} done={project.status === 'done'} />}
           <span className="flex-1" />
+          <ComplexityPips level={project.complexity} showLabel={level === 'near'} className="mr-1" />
           {tasks.length > 0 && (
             <span className="mono-xs text-text-muted">
               {done}/{tasks.length}
@@ -468,6 +489,7 @@ function TaskRow({
   const st = TASK_STATUS[task.status];
   const isDone = task.status === 'done';
   const urgency = taskUrgency(task);
+  const blocked = isBlocked(task);
   const dnd = useDnd();
   const dragging = dnd.active?.kind === 'task' && dnd.active.id === task.id;
   return (
@@ -483,10 +505,12 @@ function TaskRow({
         }}
         className={cn(
           'hover:bg-surface-sunken flex w-full cursor-grab items-center gap-2 rounded-xs px-1.5 py-1 text-left active:cursor-grabbing',
-          urgency?.level === 'urgent' && 'bg-danger-dim',
+          (urgency?.level === 'urgent' || blocked) && 'bg-danger-dim',
           selected && 'bg-state-row-selected',
         )}
-        title={[st.label, urgency?.reason, task.note].filter(Boolean).join(' · ')}
+        title={[st.label, blocked && `卡住：${task.blockedReason}`, urgency?.reason, task.estimateDays ? `預估 ${fmtDays(task.estimateDays)} 天` : '', task.note]
+          .filter(Boolean)
+          .join(' · ')}
       >
         <span
           className="flex size-3.5 shrink-0 items-center justify-center rounded-full"
@@ -507,13 +531,18 @@ function TaskRow({
         >
           {task.title}
         </span>
-        {urgency?.level === 'urgent' ? (
+        {blocked ? (
+          <ProhibitIcon weight="bold" className="text-danger-bold shrink-0" aria-label={`卡住：${task.blockedReason}`} />
+        ) : urgency?.level === 'urgent' ? (
           <WarningCircleIcon weight="fill" className="text-danger-bold shrink-0" aria-label={urgency.reason} />
         ) : urgency?.level === 'stale' ? (
           <ClockIcon weight="fill" className="text-warning-bold shrink-0" aria-label={urgency.reason} />
         ) : (
           task.priority === 'high' &&
           !isDone && <FlagIcon weight="fill" className="text-danger-bold shrink-0" aria-label="高優先" />
+        )}
+        {task.estimateDays > 0 && !isDone && (
+          <span className="mono-xs text-text-muted shrink-0">{fmtDays(task.estimateDays)}d</span>
         )}
         {task.dueDate && !isDone && <DueChip due={task.dueDate} />}
         <MemberAvatar member={assignee} size="xs" />

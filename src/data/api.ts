@@ -83,6 +83,8 @@ export function normalizeBoard(raw: Partial<Record<SheetName, Row[]>>): Board {
       name: str(r.name),
       status: oneOf(r.status, ['planning', 'active', 'paused', 'done'] as const, 'planning'),
       priority: oneOf(r.priority, ['P0', 'P1', 'P2'] as const, 'P1'),
+      complexity: Math.max(0, Math.min(5, Math.round(num(r.complexity)))),
+      complexityNote: str(r.complexityNote),
       ownerId: str(r.ownerId),
       summary: str(r.summary),
       pitch: str(r.pitch),
@@ -105,6 +107,13 @@ export function normalizeBoard(raw: Partial<Record<SheetName, Row[]>>): Board {
       priority: oneOf(r.priority, ['high', 'mid', 'low'] as const, 'mid'),
       dueDate: date(r.dueDate),
       note: str(r.note),
+      estimateDays: Math.max(0, num(r.estimateDays)),
+      uncertainty: oneOf(r.uncertainty, ['', 'low', 'mid', 'high'] as const, ''),
+      blockedReason: str(r.blockedReason),
+      deps: str(r.deps),
+      blockedAt: str(r.blockedAt),
+      startedAt: str(r.startedAt),
+      doneAt: str(r.doneAt),
       order: num(r.order),
       updatedAt: str(r.updatedAt),
     }));
@@ -224,7 +233,7 @@ class ProxyClient implements ApiClient {
 
 // ─── Demo (localStorage) ──────────────────────────────────────────────────────
 
-const LS_KEY = 'eagle-tasks/demo-board/v3';
+const LS_KEY = 'eagle-tasks/demo-board/v7';
 
 class LocalClient implements ApiClient {
   readonly mode = 'demo' as const;

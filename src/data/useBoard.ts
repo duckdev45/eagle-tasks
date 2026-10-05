@@ -1,7 +1,8 @@
 import { toast } from '@duckdev45/eagle-component';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { Board, EntityKind, EntityMap } from '../types';
+import { stampTask } from '../lib/meta';
+import type { Board, EntityKind, EntityMap, Task } from '../types';
 import { SHEET_OF } from '../types';
 import { api, normalizeBoard, type BatchOp } from './api';
 
@@ -103,9 +104,21 @@ export function useBoard() {
     [refresh],
   );
 
+  const boardRef = useRef(board);
+  boardRef.current = board;
+
   const save = useCallback(
-    <K extends EntityKind>(kind: K, record: EntityMap[K], okMsg?: string) => {
+    <K extends EntityKind>(kind: K, input: EntityMap[K], okMsg?: string) => {
       const sheet = SHEET_OF[kind];
+      // Tasks get their 開始／完成／卡關 times stamped automatically.
+      const record = (
+        kind === 'task'
+          ? stampTask(
+              boardRef.current.tasks.find((t) => t.id === input.id),
+              input as Task,
+            )
+          : input
+      ) as EntityMap[K];
       setBoard((b) => {
         const rows = b[sheet] as unknown as EntityMap[K][];
         const i = rows.findIndex((r) => r.id === record.id);

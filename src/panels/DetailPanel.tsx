@@ -14,19 +14,26 @@ import {
 } from '@phosphor-icons/react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { ComplexityPips } from '../components/Complexity';
 import { MemberAvatar } from '../components/MemberAvatar';
 import { cn } from '../lib/cn';
 import {
   DOMAIN_COLOR,
   DOMAIN_KIND,
+  COMPLEXITY_LABEL,
   PROJECT_PRIORITY,
   PROJECT_STATUS,
+  UNCERTAINTY,
+  bufferedDays,
+  fmtDays,
+  isBlocked,
   taskUrgency,
   TASK_PRIORITY,
   TASK_STATUS,
   shortDate,
   splitTags,
 } from '../lib/meta';
+import { parseDeps } from '../lib/schedule';
 import type {
   Board,
   Domain,
@@ -470,6 +477,8 @@ function DomainView({
                     <MemberAvatar member={owner} size="xs" />
                     找 <b className="text-text-primary">{owner?.name ?? '未指定'}</b>
                     {owner?.title && <span className="text-text-muted">· {owner.title}</span>}
+                    <span className="flex-1" />
+                    <ComplexityPips level={p.complexity} />
                   </div>
                   <PitchCallout text={p.pitch} />
                   {p.nextStep && (
@@ -555,6 +564,16 @@ function ProjectView({
           </div>
         </Section>
       )}
+      {p.complexity > 0 && (
+        <Section title="複雜度">
+          <div className="flex items-center gap-2">
+            <ComplexityPips level={p.complexity} showLabel={false} />
+            <span className="zh-body-sm-bold text-text-primary">{COMPLEXITY_LABEL[p.complexity]}</span>
+            <span className="mono-xs text-text-muted">{p.complexity}/5</span>
+          </div>
+          {p.complexityNote && <p className="zh-body-xs text-text-secondary mt-2 whitespace-pre-wrap">{p.complexityNote}</p>}
+        </Section>
+      )}
       <Section title="負責人 / 對外窗口">
         <ContactCard member={idx.member.get(p.ownerId)} role="專案窗口" onSelect={onSelect} />
       </Section>
@@ -603,6 +622,10 @@ function TaskView({
   const p = idx.project.get(t.projectId);
   const urgency = taskUrgency(t);
   const d = p && idx.domain.get(p.domainId);
+  const before = parseDeps(t)
+    .map((id) => idx.task.get(id))
+    .filter((x): x is Task => !!x);
+  const after = [...idx.task.values()].filter((x) => parseDeps(x).includes(t.id));
   return (
     <div>
       <div className="px-5 pt-4 pb-4">
@@ -642,6 +665,56 @@ function TaskView({
           className="w-full"
         />
       </Section>
+      {isBlocked(t) && (
+        <Section title="卡關中">
+          <div className="bg-danger-dim border-danger-mid rounded-sm border p-3">
+            <p className="zh-body-xs text-text-primary whitespace-pre-wrap">{t.blockedReason}</p>
+            {t.blockedAt && (
+              <p className="zh-body-xxs text-text-muted mt-1">
+                從 {t.blockedAt.slice(0, 10)} 開始卡住
+              </p>
+            )}
+          </div>
+        </Section>
+      )}
+      <Section title="工作量">
+        <dl className="grid grid-cols-3 gap-2 text-center">
+          <div className="bg-surface-sunken rounded-sm p-2">
+            <dt className="zh-body-xxs text-text-muted">預估</dt>
+            <dd className="text-text-primary text-lg font-semibold">{t.estimateDays ? `${fmtDays(t.estimateDays)} 天` : '未估'}</dd>
+          </div>
+          <div className="bg-surface-sunken rounded-sm p-2">
+            <dt className="zh-body-xxs text-text-muted">不確定性</dt>
+            <dd className="text-text-primary text-lg font-semibold">{t.uncertainty ? UNCERTAINTY[t.uncertainty].label : '—'}</dd>
+          </div>
+          <div className="bg-surface-sunken rounded-sm p-2">
+            <dt className="zh-body-xxs text-text-muted">含緩衝</dt>
+            <dd className="text-text-primary text-lg font-semibold">{t.estimateDays ? `${fmtDays(bufferedDays(t))} 天` : '—'}</dd>
+          </div>
+        </dl>
+        {(t.startedAt || t.doneAt) && (
+          <p className="zh-body-xxs text-text-muted mt-2">
+            {t.startedAt && `開始 ${t.startedAt.slice(0, 10)}`}
+            {t.doneAt && ` · 完成 ${t.doneAt.slice(0, 10)}`}
+          </p>
+        )}
+      </Section>
+      {(before.length > 0 || after.length > 0) && (
+        <Section title="前後關係">
+          {before.length > 0 && (
+            <>
+              <p className="zh-body-xxs text-text-muted mb-1">要先等這些做完</p>
+              <TaskList tasks={before} idx={idx} onSelect={onSelect} />
+            </>
+          )}
+          {after.length > 0 && (
+            <>
+              <p className={cn('zh-body-xxs text-text-muted mb-1', before.length > 0 && 'mt-3')}>做完後可以開始</p>
+              <TaskList tasks={after} idx={idx} onSelect={onSelect} />
+            </>
+          )}
+        </Section>
+      )}
       <Section title="負責人">
         <ContactCard member={idx.member.get(t.assigneeId)} role="任務負責人" onSelect={onSelect} />
       </Section>

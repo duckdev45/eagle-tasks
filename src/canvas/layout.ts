@@ -12,7 +12,32 @@ export interface Pos {
   y: number;
 }
 
+export const STEP = FRAME_W + FRAME_GAP;
+
 /**
+ * Fixed row: every frame is one fixed-width column, in `order`, with the same
+ * gap between neighbours — no free positioning. While a frame is dragged it
+ * follows the pointer and the others slide aside to open the slot it would
+ * land in; `order` is the resulting left-to-right id list to persist.
+ */
+export function layoutRow(domains: Domain[], drag?: { id: string; pos: Pos } | null) {
+  const sorted = [...domains].sort((a, b) => a.order - b.order);
+  const ids = sorted.map((d) => d.id);
+  let order = ids;
+  if (drag && ids.includes(drag.id)) {
+    const others = ids.filter((id) => id !== drag.id);
+    const slot = Math.max(0, Math.min(others.length, Math.round(drag.pos.x / STEP)));
+    order = [...others.slice(0, slot), drag.id, ...others.slice(slot)];
+  }
+  const positions: Record<string, Pos> = {};
+  order.forEach((id, i) => {
+    positions[id] = drag?.id === id ? drag.pos : { x: i * STEP, y: 0 };
+  });
+  return { positions, order };
+}
+
+/**
+ * (Legacy free layout — kept for reference, no longer used by the app.)
  * Domains with a saved (x, y) stay where someone put them. The rest are
  * laid out left-to-right after the right-most placed frame, so a newly added
  * client never lands on top of an existing one.

@@ -9,6 +9,7 @@ import type {
   Task,
   TaskPriority,
   TaskStatus,
+  Uncertainty,
 } from '../types';
 
 export const DOMAIN_KIND: Record<DomainKind, { label: string; badge: BadgeVariant }> = {
@@ -40,6 +41,60 @@ export const PROJECT_PRIORITY: Record<ProjectPriority, { label: string; hint: st
   P1: { label: 'P1', hint: '產品線正在做的主要功能', badge: 'outline' },
   P2: { label: 'P2', hint: '實驗、內部工具、暫停中', badge: 'ghost' },
 };
+
+export const COMPLEXITY_LABEL = ['未評估', '很小', '小', '中', '大', '極大'] as const;
+
+export const UNCERTAINTY: Record<Exclude<Uncertainty, ''>, { label: string; buffer: number; hint: string }> = {
+  low: { label: '低', buffer: 0.1, hint: '做過類似的，需求清楚' },
+  mid: { label: '中', buffer: 0.3, hint: '大致清楚，有些細節待確認' },
+  high: { label: '高', buffer: 0.5, hint: '沒做過、需求未定或要等別人' },
+};
+
+/** Estimate plus the buffer its uncertainty calls for (unset → 中). */
+export function bufferedDays(t: Pick<Task, 'estimateDays' | 'uncertainty'>) {
+  const b = UNCERTAINTY[t.uncertainty || 'mid'].buffer;
+  return t.estimateDays * (1 + b);
+}
+
+export const isBlocked = (t: Task) => t.status !== 'done' && t.blockedReason.trim() !== '';
+
+/** Fill in the automatic timestamps when a task's status / blocker changes. */
+export function stampTask(prev: Task | undefined, next: Task): Task {
+  const now = new Date().toISOString();
+  const out = { ...next };
+  if (next.status === 'doing' && !out.startedAt) out.startedAt = now;
+  if (next.status === 'done' && prev?.status !== 'done') {
+    out.doneAt = now;
+    if (!out.startedAt) out.startedAt = prev?.updatedAt || now;
+  }
+  if (next.status !== 'done' && prev?.status === 'done') out.doneAt = '';
+  const blocked = next.blockedReason.trim() !== '';
+  if (blocked && !(prev?.blockedReason ?? '').trim()) out.blockedAt = now;
+  if (!blocked) out.blockedAt = '';
+  return out;
+}
+
+/** Weekdays between two ISO times, at least half a day. */
+export function workdaysBetween(a: string, b: string) {
+  const s = new Date(a);
+  const e = new Date(b);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return null;
+  let days = 0;
+  const d = new Date(s);
+  d.setHours(0, 0, 0, 0);
+  const end = new Date(e);
+  end.setHours(0, 0, 0, 0);
+  while (d < end) {
+    const w = d.getDay();
+    if (w !== 0 && w !== 6) days++;
+    d.setDate(d.getDate() + 1);
+  }
+  return Math.max(0.5, days);
+}
+
+export function fmtDays(n: number) {
+  return n >= 10 ? n.toFixed(0) : n.toFixed(1).replace(/\.0$/, '');
+}
 
 export type Urgency = { level: 'urgent' | 'stale'; reason: string };
 const STALE_REVIEW_DAYS = 3;

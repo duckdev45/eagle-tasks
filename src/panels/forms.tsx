@@ -8,19 +8,27 @@ import {
 } from '@duckdev45/eagle-component';
 import { useId, useState } from 'react';
 
+import { DepsPicker } from '../components/DepsPicker';
+
 import {
   DOMAIN_COLOR,
   DOMAIN_KIND,
+  COMPLEXITY_LABEL,
   PROJECT_PRIORITY,
   PROJECT_STATUS,
   TASK_PRIORITY,
   TASK_STATUS,
+  UNCERTAINTY,
+  bufferedDays,
+  fmtDays,
 } from '../lib/meta';
 import type { Board, Domain, EntityKind, EntityMap, Member, Project, Task } from '../types';
 
 // One generic draft-editing form per entity. Each returns the edited record
 // through `onChange`; validation lives in `validate()` so the panel footer
 // can disable "儲存" and show the error on the right Field.
+
+const ESTIMATES = [0, 0.5, 1, 2, 3, 5, 8, 13];
 
 const toOptions = <T extends string>(m: Record<T, { label: string }>): SelectOption[] =>
   (Object.keys(m) as T[]).map((k) => ({ value: k, label: m[k].label }));
@@ -100,7 +108,7 @@ export function DomainForm({ value: v, onChange, board, errors }: FormProps<Doma
 }
 
 export function ProjectForm({ value: v, onChange, board, errors }: FormProps<Project>) {
-  const id = useIds('name', 'domain', 'status', 'priority', 'owner', 'summary', 'pitch', 'next', 'tags', 'due', 'link');
+  const id = useIds('name', 'domain', 'status', 'priority', 'cx', 'cxNote', 'owner', 'summary', 'pitch', 'next', 'tags', 'due', 'link');
   const set = <K extends keyof Project>(k: K, val: Project[K]) => onChange({ ...v, [k]: val });
   return (
     <div className="flex flex-col gap-4">
@@ -132,6 +140,17 @@ export function ProjectForm({ value: v, onChange, board, errors }: FormProps<Pro
           onChange={(x) => set('priority', x as Project['priority'])}
         />
       </Field>
+      <Field orientation="vertical" label="複雜度" htmlFor={id.cx} description="看程式規模、畫面與 API 數、資料表、串接的外部系統、角色權限">
+        <Select
+          id={id.cx}
+          options={[1, 2, 3, 4, 5, 0].map((n) => ({ value: String(n), label: n ? `${n}　${COMPLEXITY_LABEL[n]}` : '未評估' }))}
+          value={String(v.complexity)}
+          onChange={(x) => set('complexity', Number(x))}
+        />
+      </Field>
+      <Field orientation="vertical" label="複雜度說明" htmlFor={id.cxNote}>
+        <Textarea id={id.cxNote} rows={3} value={v.complexityNote} onChange={(e) => set('complexityNote', e.target.value)} />
+      </Field>
       <Field orientation="vertical" label="負責人 / 對外窗口" htmlFor={id.owner}>
         <Select id={id.owner} options={memberOptions(board.members)} value={v.ownerId} onChange={(x) => set('ownerId', x as string)} searchable />
       </Field>
@@ -155,7 +174,7 @@ export function ProjectForm({ value: v, onChange, board, errors }: FormProps<Pro
 }
 
 export function TaskForm({ value: v, onChange, board, errors }: FormProps<Task>) {
-  const id = useIds('title', 'project', 'assignee', 'status', 'priority', 'due', 'note');
+  const id = useIds('title', 'project', 'assignee', 'status', 'priority', 'due', 'note', 'est', 'unc', 'blocked', 'deps');
   const set = <K extends keyof Task>(k: K, val: Task[K]) => onChange({ ...v, [k]: val });
   const domainName = new Map(board.domains.map((d) => [d.id, d.name]));
   return (
@@ -190,6 +209,58 @@ export function TaskForm({ value: v, onChange, board, errors }: FormProps<Task>)
       </div>
       <Field orientation="vertical" label="截止日" htmlFor={id.due}>
         <DatePicker id={id.due} locale="zh-TW" date={toDate(v.dueDate)} setDate={(d) => set('dueDate', fromDate(d))} />
+      </Field>
+      <Field
+        orientation="vertical"
+        label="預估人天"
+        htmlFor={id.est}
+        description={
+          v.estimateDays > 5
+            ? '超過 5 天的任務建議再拆小，比較好追進度'
+            : v.estimateDays > 0
+              ? `加上不確定性緩衝後約 ${fmtDays(bufferedDays(v))} 天`
+              : '一個人專心做要幾天（不含緩衝）'
+        }
+      >
+        <Select
+          id={id.est}
+          options={ESTIMATES.map((n) => ({ value: String(n), label: n ? `${n} 天` : '未估' }))}
+          value={String(v.estimateDays)}
+          onChange={(x) => set('estimateDays', Number(x))}
+        />
+      </Field>
+      <Field
+        orientation="vertical"
+        label="不確定性"
+        htmlFor={id.unc}
+        description={v.uncertainty ? `${UNCERTAINTY[v.uncertainty].hint}，緩衝 +${UNCERTAINTY[v.uncertainty].buffer * 100}%` : '沒選的話以「中」計算緩衝'}
+      >
+        <Select
+          id={id.unc}
+          options={[
+            { value: '', label: '未評估' },
+            ...(['low', 'mid', 'high'] as const).map((k) => ({ value: k, label: `${UNCERTAINTY[k].label}　${UNCERTAINTY[k].hint}` })),
+          ]}
+          value={v.uncertainty}
+          onChange={(x) => set('uncertainty', x as Task['uncertainty'])}
+        />
+      </Field>
+      <Field
+        orientation="vertical"
+        label="前置任務"
+        htmlFor={id.deps}
+        description="這些做完才能開始。路徑圖會依這個畫箭頭、排先後"
+      >
+        <DepsPicker id={id.deps} task={v} tasks={board.tasks} onChange={(d) => set('deps', d)} />
+      </Field>
+      <Field orientation="vertical" label="卡住原因" htmlFor={id.blocked} description="有填就算卡關，會出現在總覽的卡關清單；解決後清空即可">
+        <Textarea
+          id={id.blocked}
+          rows={2}
+          value={v.blockedReason}
+          placeholder="例：等福懋提供 monday 匯出檔"
+          onChange={(e) => set('blockedReason', e.target.value)}
+        />
       </Field>
       <Field orientation="vertical" label="備註" htmlFor={id.note}>
         <Textarea id={id.note} rows={3} value={v.note} onChange={(e) => set('note', e.target.value)} />

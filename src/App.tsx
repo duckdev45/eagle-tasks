@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Logo,
+  SegmentedControl,
   ToggleChip,
   toast,
   useConfirm,
@@ -24,6 +25,9 @@ import {
   PlusIcon,
   SunIcon,
   UserPlusIcon,
+  ChartPieSliceIcon,
+  MapTrifoldIcon,
+  PathIcon,
   WarningCircleIcon,
   XIcon,
 } from '@phosphor-icons/react';
@@ -32,7 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, type CanvasHandle } from './canvas/Canvas';
 import { DndProvider, type DragKind, type DropTarget } from './canvas/dnd';
 import { DomainFrame, Edges, RootNode } from './canvas/nodes';
-import { FRAME_W, layoutDomains, resolveDrop, rootPosition, type Pos } from './canvas/layout';
+import { FRAME_W, layoutRow, rootPosition, type Pos } from './canvas/layout';
 import { FindBox } from './components/FindBox';
 import { PeopleDock } from './components/PeopleDock';
 import { newId, type BatchOp } from './data/api';
@@ -43,6 +47,11 @@ import { hasFilter, spotlightForEntity, spotlightForFilter, type Spotlight } fro
 import { DetailPanel, type PanelState } from './panels/DetailPanel';
 import type { Domain, EntityKind, EntityMap, Member, Project, Selection, Task, TaskStatus } from './types';
 import { SHEET_OF } from './types';
+import { cn } from './lib/cn';
+import { Overview } from './views/Overview';
+import { Plan } from './views/Plan';
+
+type View = 'map' | 'plan' | 'overview';
 
 function useMediaQuery(q: string) {
   const [match, setMatch] = useState(() => window.matchMedia(q).matches);
@@ -86,6 +95,22 @@ export default function App() {
   const [dark, setDark] = useTheme();
   const [zoom, setZoom] = useState(100);
   const [panel, setPanel] = useState<PanelState>(null);
+  const [view, setViewState] = useState<View>(() => {
+    try {
+      const v = localStorage.getItem('eagle-tasks/view');
+      return v === 'overview' || v === 'plan' ? v : 'map';
+    } catch {
+      return 'map';
+    }
+  });
+  const setView = useCallback((v: View) => {
+    setViewState(v);
+    try {
+      localStorage.setItem('eagle-tasks/view', v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [p0Only, setP0Only] = useState(false);
   const [urgentOnly, setUrgentOnly] = useState(false);
@@ -93,12 +118,14 @@ export default function App() {
   const urgentCount = useMemo(() => board.tasks.filter(isUrgent).length, [board.tasks]);
   const [focusSpot, setFocusSpot] = useState<Spotlight | null>(null);
   const [pulseId, setPulseId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, Pos>>({});
+  const [dragFrame, setDragFrame] = useState<{ id: string; pos: Pos } | null>(null);
   const { confirm, confirmDialog } = useConfirm();
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const members = useMemo(() => new Map(board.members.map((m) => [m.id, m])), [board.members]);
-  const positions = useMemo(() => layoutDomains(board.domains, drafts), [board.domains, drafts]);
+  const row = useMemo(() => layoutRow(board.domains, dragFrame), [board.domains, dragFrame]);
+  const positions = row.positions;
+  const frameIndex = useMemo(() => new Map(row.order.map((id, i) => [id, i + 1])), [row.order]);
   const root = useMemo(() => rootPosition(Object.values(positions)), [positions]);
   const spotlight = useMemo(
     () => (hasFilter(filter) ? spotlightForFilter(board, filter, isUrgent) : focusSpot),
@@ -178,27 +205,29 @@ export default function App() {
     [board, pulse],
   );
 
-  const onPick = useCallback((h: Hit) => focusOn(h.kind, h.id), [focusOn]);
+  const onPick = useCallback(
+    (h: Hit) => {
+      setView('map');
+      requestAnimationFrame(() => focusOn(h.kind, h.id));
+    },
+    [focusOn, setView],
+  );
 
-  const onDrag = useCallback((id: string, pos: Pos) => setDrafts((d) => ({ ...d, [id]: pos })), []);
+  const onDrag = useCallback((id: string, pos: Pos) => setDragFrame({ id, pos }), []);
   const onDragEnd = useCallback(
     (id: string, pos: Pos) => {
-      // Pin every frame that is still auto-laid-out, so moving one never makes
-      // the others jump on the next load.
-      const heights = Object.fromEntries(
-        board.domains.map((d) => [
-          d.id,
-          document.querySelector<HTMLElement>(`[data-node-id="${CSS.escape(d.id)}"]`)?.offsetHeight ?? 0,
-        ]),
-      );
-      const all = resolveDrop(layoutDomains(board.domains, { ...drafts, [id]: pos }), heights, id);
-      const ops: BatchOp[] = board.domains
-        .filter((d) => d.x !== all[d.id].x || d.y !== all[d.id].y)
-        .map((d) => ({ action: 'upsert', sheet: 'domains', record: { ...d, x: all[d.id].x, y: all[d.id].y } }));
-      setDrafts({});
+      // Frames live in a fixed row: dropping one just changes its slot. Persist
+      // `order` 1..n for everything that moved (and clear any old free x/y).
+      const { order } = layoutRow(board.domains, { id, pos });
+      const ops: BatchOp[] = order.flatMap((did, i): BatchOp[] => {
+        const d = board.domains.find((x) => x.id === did)!;
+        if (d.order === i + 1 && d.x == null && d.y == null) return [];
+        return [{ action: 'upsert', sheet: 'domains', record: { ...d, order: i + 1, x: null, y: null } as Domain }];
+      });
+      setDragFrame(null);
       if (ops.length) void store.batch(ops);
     },
-    [board.domains, drafts, store],
+    [board.domains, store],
   );
 
   const create = useCallback(
@@ -215,13 +244,13 @@ export default function App() {
         record = {
           id: newId('p'), domainId: p.domainId ?? board.domains[0]?.id ?? '', name: '', status: 'planning',
           ownerId: '', summary: '', pitch: '', nextStep: '', tags: '', dueDate: '', link: '',
-          order: nextOrder(board.projects), ...p, priority: p.priority ?? 'P1',
+          order: nextOrder(board.projects), ...p, priority: p.priority ?? 'P1', complexity: p.complexity ?? 0, complexityNote: p.complexityNote ?? '',
         } satisfies Project;
       } else if (kind === 'task') {
         const t = preset as Partial<Task>;
         record = {
           id: newId('t'), projectId: t.projectId ?? '', title: '', assigneeId: '', status: 'todo',
-          priority: 'mid', dueDate: '', note: '', order: nextOrder(board.tasks), ...t,
+          priority: 'mid', dueDate: '', note: '', estimateDays: 0, uncertainty: '', blockedReason: '', deps: '', blockedAt: '', startedAt: '', doneAt: '', order: nextOrder(board.tasks), ...t,
         } satisfies Task;
       } else {
         record = {
@@ -380,6 +409,8 @@ export default function App() {
             key={d.id}
             domain={d}
             pos={positions[d.id]}
+            index={frameIndex.get(d.id) ?? 0}
+            dragging={dragFrame?.id === d.id}
             projects={board.projects.filter((p) => p.domainId === d.id).sort((a, b) => a.order - b.order)}
             tasks={board.tasks}
             members={members}
@@ -397,7 +428,7 @@ export default function App() {
       </>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [board, positions, root, members, selection?.kind, selection?.id, spotlight, pulseId, stats, onDragEnd],
+    [board, positions, frameIndex, dragFrame?.id, root, members, selection?.kind, selection?.id, spotlight, pulseId, stats, onDragEnd],
   );
 
   const orphanProjects = board.projects.filter((p) => !board.domains.some((d) => d.id === p.domainId));
@@ -405,17 +436,30 @@ export default function App() {
   return (
     <div className="flex h-full">
       <main ref={mainRef} className="@container relative min-w-0 flex-1">
-        <DndProvider onDrop={onDrop} panBy={panBy} boundsRef={mainRef}>
-          <Canvas ref={canvas} onBackgroundClick={clearFocus} onViewChange={(v) => setZoom(Math.round(v.k * 100))}>
-            {world}
-          </Canvas>
-        </DndProvider>
+        {/* The canvas stays mounted (just hidden) in 總覽 so its camera survives the switch. */}
+        <div className={cn('absolute inset-0', view !== 'map' && 'pointer-events-none invisible')} aria-hidden={view !== 'map'}>
+          <DndProvider onDrop={onDrop} panBy={panBy} boundsRef={mainRef}>
+            <Canvas ref={canvas} onBackgroundClick={clearFocus} onViewChange={(v) => setZoom(Math.round(v.k * 100))}>
+              {world}
+            </Canvas>
+          </DndProvider>
+        </div>
+        {view === 'plan' && (
+          <div className="bg-surface-base absolute inset-x-0 top-[72px] bottom-0 @max-[1360px]:top-[124px]">
+            <Plan board={board} onSelect={(s) => s && setPanel({ mode: 'view', sel: s })} />
+          </div>
+        )}
+        {view === 'overview' && (
+          <div className="bg-surface-base absolute inset-x-0 top-[72px] bottom-0 @max-[1360px]:top-[124px]">
+            <Overview board={board} onSelect={(s) => s && setPanel({ mode: 'view', sel: s })} />
+          </div>
+        )}
 
         {/* ── Top-left: identity + sync ─────────────────────────────────── */}
         <div className="pointer-events-none absolute top-3 left-3 flex items-start gap-2">
           <div className="bg-surface-elevated border-border-subtle pointer-events-auto flex h-12 items-center gap-2.5 rounded-md border px-3 shadow-sm">
             <Logo variant="mark" className="text-primary-600 h-6 w-auto" />
-            <div className="leading-tight">
+            <div className="leading-tight max-sm:hidden">
               <div className="zh-body-xs-bold text-text-primary">團隊地圖</div>
               <div className="zh-body-xxs text-text-muted hidden sm:block">
                 {store.mode === 'demo' ? 'Demo · 本機資料' : 'GS'}
@@ -436,11 +480,23 @@ export default function App() {
         <FindBox
           board={board}
           onPick={onPick}
-          className="absolute top-3 left-1/2 w-[min(520px,calc(100%-24px))] -translate-x-1/2 @max-[1100px]:top-[68px]"
+          className="absolute top-3 left-1/2 w-[min(520px,calc(100%-24px))] -translate-x-1/2 @max-[1360px]:top-[68px]"
         />
 
         {/* ── Top-right: create + theme ───────────────────────────────────── */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
+          <SegmentedControl
+            aria-label="切換畫面"
+            size="md"
+            value={view}
+            onChange={(v) => setView(v as View)}
+            options={[
+              { value: 'map', 'aria-label': '地圖', label: <span className="max-sm:hidden">地圖</span>, icon: <MapTrifoldIcon /> },
+              { value: 'plan', 'aria-label': '路徑', label: <span className="max-sm:hidden">路徑</span>, icon: <PathIcon /> },
+              { value: 'overview', 'aria-label': '總覽', label: <span className="max-sm:hidden">總覽</span>, icon: <ChartPieSliceIcon /> },
+            ]}
+            className="bg-surface-elevated shadow-sm"
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button leadingIcon={<PlusIcon />} className="shadow-sm">
@@ -481,8 +537,10 @@ export default function App() {
            leadingIcon={dark ? <SunIcon /> : <MoonIcon />} />
         </div>
 
+        {view === 'map' && (
+          <>
         {/* ── Filters: P0 / 緊急 / active person / focus ─────────────────── */}
-        <div className="absolute top-[68px] left-3 flex items-center gap-2 @max-[1100px]:top-[118px]">
+        <div className="absolute top-[68px] left-3 flex items-center gap-2 @max-[1360px]:top-[118px]">
           <ToggleChip
             selected={p0Only}
             onSelectedChange={(v) => {
@@ -566,6 +624,9 @@ export default function App() {
           <Button variant="ghost" size="sm" aria-label="放大" title="放大（+）" onClick={() => canvas.current?.zoomBy(1.25)} leadingIcon={<PlusIcon />} />
           <Button variant="ghost" size="sm" aria-label="全部顯示" title="全部顯示（Shift+1）" onClick={() => canvas.current?.fit(undefined, { maxK: 0.9 })} leadingIcon={<CornersOutIcon />} />
         </div>
+
+          </>
+        )}
 
         {store.state === 'loading' && board.domains.length === 0 && (
           <div

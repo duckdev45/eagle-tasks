@@ -34,6 +34,10 @@ export interface Project {
   name: string;
   status: ProjectStatus;
   priority: ProjectPriority;
+  /** 1 很小 … 5 極大；0 = 未評估. */
+  complexity: number;
+  /** 為什麼是這個等級（給老闆看的白話說明）. */
+  complexityNote: string;
   /** 專案負責人 / 對外窗口. */
   ownerId: string;
   summary: string;
@@ -49,6 +53,8 @@ export interface Project {
 
 export type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 export type TaskPriority = 'high' | 'mid' | 'low';
+/** How much is still unknown — drives the estimate buffer. '' = 未評估. */
+export type Uncertainty = '' | 'low' | 'mid' | 'high';
 
 export interface Task {
   id: string;
@@ -59,6 +65,17 @@ export interface Task {
   priority: TaskPriority;
   dueDate: string;
   note: string;
+  /** 預估人天（不含緩衝）；0 = 未估. */
+  estimateDays: number;
+  uncertainty: Uncertainty;
+  /** 卡住原因；有填就算卡關. */
+  blockedReason: string;
+  /** 前置任務 id，逗號分隔（這些做完才能開始）. */
+  deps: string;
+  /** Auto-stamped ISO times (set by the app, not by hand). */
+  blockedAt: string;
+  startedAt: string;
+  doneAt: string;
   order: number;
   updatedAt?: string;
 }
