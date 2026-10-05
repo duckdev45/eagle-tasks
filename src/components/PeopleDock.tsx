@@ -31,7 +31,7 @@ export function PeopleDock({
     <div
       role="toolbar"
       aria-label="依成員篩選"
-      className="bg-surface-elevated border-border-subtle flex max-w-[calc(100vw-24px)] items-center gap-1 overflow-x-auto rounded-full border p-1 shadow-md"
+      className="bg-surface-elevated border-border-subtle flex max-w-[calc(100vw-24px)] items-center gap-1 overflow-x-auto rounded-full border p-1 shadow-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <button
         type="button"

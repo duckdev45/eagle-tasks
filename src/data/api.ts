@@ -5,6 +5,8 @@ import { SEED } from './seed';
 //
 // Two interchangeable backends behind one interface:
 //   • GasClient   — Google Apps Script Web App (VITE_GAS_URL). Sheet = database.
+//   • ProxyClient — same API through the Vercel Function at /api/board
+//                   (VITE_PROXY=1). CDN-cached reads, token stays server-side.
 //   • LocalClient — Demo mode, localStorage, seeded. Lets the page work before
 //                   the sheet exists.
 //
@@ -14,7 +16,7 @@ import { SEED } from './seed';
 export type SheetName = keyof Board;
 
 export interface ApiClient {
-  readonly mode: 'gas' | 'demo';
+  readonly mode: 'gas' | 'proxy' | 'demo';
   list(): Promise<Board>;
   upsert<T extends { id: string }>(sheet: SheetName, record: T): Promise<T>;
   remove(sheet: SheetName, id: string): Promise<void>;
@@ -174,6 +176,52 @@ class GasClient implements ApiClient {
   }
 }
 
+// ─── Vercel proxy (/api/board) ────────────────────────────────────────────────
+
+/** After a write, read straight through for this long so the CDN's 60s copy
+ *  can't snap the editor's screen back to the old data. */
+const FRESH_AFTER_WRITE_MS = 120_000;
+
+class ProxyClient implements ApiClient {
+  readonly mode = 'proxy' as const;
+  private lastWrite = 0;
+  constructor(private endpoint: string) {}
+
+  private async post(body: Record<string, unknown>) {
+    this.lastWrite = Date.now();
+    const res = await fetch(this.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
+    if (!json.ok) throw new Error(json.error || 'Apps Script 回傳錯誤');
+    this.lastWrite = Date.now();
+    return json;
+  }
+
+  async list() {
+    const fresh = Date.now() - this.lastWrite < FRESH_AFTER_WRITE_MS;
+    const res = await fetch(fresh ? `${this.endpoint}?fresh=1` : this.endpoint);
+    const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
+    if (!json.ok) throw new Error(json.error || 'Apps Script 回傳錯誤');
+    return normalizeBoard(json.data);
+  }
+
+  async upsert<T extends { id: string }>(sheet: SheetName, record: T) {
+    const json = await this.post({ action: 'upsert', sheet, record });
+    return { ...record, ...(json.record ?? {}) } as T;
+  }
+
+  async remove(sheet: SheetName, id: string) {
+    await this.post({ action: 'delete', sheet, id });
+  }
+
+  async batch(ops: BatchOp[]) {
+    if (ops.length) await this.post({ action: 'batch', ops });
+  }
+}
+
 // ─── Demo (localStorage) ──────────────────────────────────────────────────────
 
 const LS_KEY = 'eagle-tasks/demo-board/v3';
@@ -246,10 +294,14 @@ class LocalClient implements ApiClient {
 
 const GAS_URL = (import.meta.env.VITE_GAS_URL as string | undefined)?.trim() ?? '';
 const GAS_TOKEN = (import.meta.env.VITE_GAS_TOKEN as string | undefined)?.trim() ?? '';
+const USE_PROXY = (import.meta.env.VITE_PROXY as string | undefined)?.trim() === '1';
 
-export const api: ApiClient & { reset?: () => void } = GAS_URL
-  ? new GasClient(GAS_URL, GAS_TOKEN)
-  : new LocalClient();
+// Priority: proxy (production on Vercel) → direct Apps Script (local dev) → demo.
+export const api: ApiClient & { reset?: () => void } = USE_PROXY
+  ? new ProxyClient('/api/board')
+  : GAS_URL
+    ? new GasClient(GAS_URL, GAS_TOKEN)
+    : new LocalClient();
 
 export function newId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;

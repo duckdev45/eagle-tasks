@@ -3,10 +3,32 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Board, EntityKind, EntityMap } from '../types';
 import { SHEET_OF } from '../types';
-import { api, type BatchOp } from './api';
+import { api, normalizeBoard, type BatchOp } from './api';
 
 const EMPTY: Board = { domains: [], projects: [], tasks: [], members: [] };
 const POLL_MS = 60_000;
+const CACHE_KEY = `eagle-tasks/cache/${api.mode}`;
+
+/** Last board this browser saw — shown instantly while the network catches up. */
+function readCache(): { board: Board; savedAt: Date } | null {
+  if (api.mode === 'demo') return null; // demo data already lives in localStorage
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { board, savedAt } = JSON.parse(raw);
+    return { board: normalizeBoard(board), savedAt: new Date(savedAt) };
+  } catch {
+    return null;
+  }
+}
+function writeCache(board: Board) {
+  if (api.mode === 'demo') return;
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ board, savedAt: new Date().toISOString() }));
+  } catch {
+    /* storage full / blocked — cache is optional */
+  }
+}
 
 export type LoadState = 'loading' | 'ready' | 'error';
 
@@ -16,11 +38,14 @@ export type LoadState = 'loading' | 'ready' | 'error';
  * never shows something the sheet doesn't have.
  */
 export function useBoard() {
-  const [board, setBoard] = useState<Board>(EMPTY);
-  const [state, setState] = useState<LoadState>('loading');
+  const [cached] = useState(readCache);
+  const [board, setBoard] = useState<Board>(cached?.board ?? EMPTY);
+  const [state, setState] = useState<LoadState>(cached ? 'ready' : 'loading');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(0);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [lastSync, setLastSync] = useState<Date | null>(cached?.savedAt ?? null);
+  /** True until the first successful network read (we may be showing cache). */
+  const [revalidating, setRevalidating] = useState(true);
   const pendingRef = useRef(0);
 
   const refresh = useCallback(async (silent = false) => {
@@ -32,7 +57,9 @@ export function useBoard() {
       setState('ready');
       setError('');
       setLastSync(new Date());
+      setRevalidating(false);
     } catch (e) {
+      setRevalidating(false);
       setError(e instanceof Error ? e.message : String(e));
       setState((s) => (s === 'ready' ? s : 'error'));
       if (silent) return;
@@ -40,8 +67,13 @@ export function useBoard() {
     }
   }, []);
 
+  // Keep the cache in step with whatever is on screen (including optimistic edits).
   useEffect(() => {
-    void refresh();
+    if (state === 'ready') writeCache(board);
+  }, [board, state]);
+
+  useEffect(() => {
+    void refresh(!!cached);
     const t = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh(true);
     }, POLL_MS);
@@ -116,7 +148,8 @@ export function useBoard() {
     board,
     state,
     error,
-    syncing: pending > 0,
+    syncing: pending > 0 || (revalidating && state === 'ready'),
+    fromCache: revalidating && !!cached,
     lastSync,
     mode: api.mode,
     refresh,

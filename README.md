@@ -63,9 +63,32 @@ python3 seed/build_seed.py
 
 它會同時更新 `src/data/seed.ts`（Demo 模式用）和 `gas/Code.gs` 裡的 `SEED` 區塊，再把 `Code.gs` 貼回 Apps Script。
 
-## 部署前端
+## 部署前端（Vercel）
 
-`pnpm build` 會產出 `dist/`（`base: './'`，可以直接放 GitHub Pages、Vercel、Netlify 或任何靜態主機）。
+```
+瀏覽器 ──▶ Vercel CDN ──▶ api/board.ts ──▶ Apps Script ──▶ Google Sheet
+            快取 60 秒，過期先回舊資料、背景更新
+```
+
+Apps Script 每次呼叫要 4～5 秒，冷啟動 30 秒以上，所以正式環境不讓瀏覽器直接打它：
+
+- `GET /api/board`：資料在 Vercel CDN 快取 60 秒，過期後先回舊的、背景再向 Apps Script 更新，任何人（含無痕、第一次打開）都是秒開。
+- `POST /api/board`：寫入時由伺服器端補上 token 轉給 Apps Script，token 不會出現在前端 JS。
+- 剛寫入的 2 分鐘內，前端改讀 `?fresh=1`（不經快取），自己的修改不會被舊資料蓋回去；其他人最多晚 1 分鐘看到。
+- 瀏覽器另外會記住上次看到的資料，下次打開先顯示，再背景同步（左上角顯示「同步中…」）。
+
+Vercel → Settings → Environment Variables：
+
+| Key | 值 |
+| --- | --- |
+| `VITE_PROXY` | `1` |
+| `GAS_URL` | Apps Script 網址（…/exec） |
+| `GAS_TOKEN` | 指令碼屬性 `API_TOKEN` 的值 |
+| `NPM_RC` | `@duckdev45:registry=https://npm.pkg.github.com/` 換行 `//npm.pkg.github.com/:_authToken=<GitHub PAT，read:packages>` |
+
+改完環境變數要 Redeploy。舊的 `VITE_GAS_URL`、`VITE_GAS_TOKEN` 在 Vercel 上要刪掉，不然 token 還是會被打包進前端。
+
+本機 `pnpm dev` 不會跑 `api/`，所以本機用 `.env.local` 的 `VITE_GAS_URL` 直連 Apps Script；要在本機測代理可以用 `vercel dev`。
 
 ## 設計系統
 

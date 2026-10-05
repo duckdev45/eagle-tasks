@@ -419,7 +419,13 @@ export default function App() {
               <div className="zh-body-xs-bold text-text-primary">團隊地圖</div>
               <div className="zh-body-xxs text-text-muted hidden sm:block">
                 {store.mode === 'demo' ? 'Demo · 本機資料' : 'GS'}
-                {store.syncing ? ' · 同步中…' : store.lastSync ? ` · ${store.lastSync.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })} 更新` : ''}
+                {store.error && store.state === 'ready'
+                  ? ` · 連線失敗，顯示 ${store.lastSync?.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) ?? ''} 的資料`
+                  : store.syncing
+                    ? ' · 同步中…'
+                    : store.lastSync
+                      ? ` · ${store.lastSync.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })} 更新`
+                      : ''}
               </div>
             </div>
             <Button variant="ghost" size="sm" aria-label="重新載入" title="重新載入" onClick={() => void store.refresh()} loading={store.state === 'loading'} leadingIcon={<ArrowClockwiseIcon />} />
@@ -560,6 +566,17 @@ export default function App() {
           <Button variant="ghost" size="sm" aria-label="放大" title="放大（+）" onClick={() => canvas.current?.zoomBy(1.25)} leadingIcon={<PlusIcon />} />
           <Button variant="ghost" size="sm" aria-label="全部顯示" title="全部顯示（Shift+1）" onClick={() => canvas.current?.fit(undefined, { maxK: 0.9 })} leadingIcon={<CornersOutIcon />} />
         </div>
+
+        {store.state === 'loading' && board.domains.length === 0 && (
+          <div
+            role="status"
+            className="bg-surface-overlay border-border-subtle absolute top-1/2 left-1/2 flex w-[min(360px,90%)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-lg border p-6 text-center shadow-lg"
+          >
+            <span className="border-primary-500 size-8 animate-spin rounded-full border-4 border-t-transparent" aria-hidden />
+            <div className="zh-body-sm-bold text-text-primary">正在從 Google Sheet 載入…</div>
+            <p className="zh-body-xxs text-text-muted">第一次打開可能要等 10～30 秒，之後就會很快。</p>
+          </div>
+        )}
 
         {store.state === 'error' && (
           <div className="bg-surface-overlay border-danger-mid absolute top-1/2 left-1/2 w-[min(420px,90%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border p-5 shadow-lg">
