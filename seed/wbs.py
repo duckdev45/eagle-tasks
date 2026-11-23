@@ -8,34 +8,72 @@
 
 LEE, DUCK, JARED = 'm-lee', 'm-duck', 'm-jared'
 
-WEB = [  # 福懋建設官網重構（p-web）
+WEB = [  # 福懋建設官網重構（p-web）— 2026-11-23 依 gw-fumao git 歷史改派：duck 212／216 個 commit、約 35 萬行；Lee 4 個（CI、相依套件）。只有 W27 的 AWS 環境是 Lee 在 aws_terragrunt 做的
     ('W01', '需求', '啟動會議：確認範圍、驗收窗口、上線時程', DUCK, 0.5, 'low', [], None),
-    ('W02', '需求', '現行網站盤點：頁面、內容、SEO 排名與舊網址清單', JARED, 2, 'low', ['W01'], None),
-    ('W03', '需求', '取得 winshop／monday 的資料樣本與存取方式（API 或匯出）', LEE, 2, 'high', ['W01'], None),
-    ('W04', '需求', '定義住戶與報修流程：報修單狀態、派工、滿意度電訪', LEE, 2, 'mid', ['W03'], None),
-    ('W05', '設計', '新版視覺提案（多版色系），客戶選定一版', JARED, 3, 'mid', ['W01'], '視覺'),
-    ('W06', '設計', '資訊架構與 sitemap', JARED, 1, 'low', ['W02'], None),
-    ('W07', '設計', '前台頁面設計稿（首頁、建案、品牌、聯絡）', JARED, 5, 'mid', ['W05', 'W06'], None),
-    ('W08', '設計', '會員與報修流程畫面設計', JARED, 3, 'mid', ['W04', 'W05'], None),
-    ('W09', '設計', '客服後台畫面設計', JARED, 2, 'mid', ['W04'], None),
+    ('W02', '需求', '現行網站盤點：頁面、內容、SEO 排名與舊網址清單', DUCK, 2, 'low', ['W01'], None),
+    ('W03', '需求', '取得 winshop／monday 的資料樣本與存取方式（API 或匯出）', DUCK, 2, 'high', ['W01'], None),
+    ('W04', '需求', '定義住戶與報修流程：報修單狀態、派工、滿意度電訪', DUCK, 2, 'mid', ['W03'], None),
+    ('W05', '設計', '新版視覺提案（多版色系），客戶選定一版', DUCK, 3, 'mid', ['W01'], '視覺'),
+    ('W06', '設計', '資訊架構與 sitemap', DUCK, 1, 'low', ['W02'], None),
+    ('W07', '設計', '前台頁面設計稿（首頁、建案、品牌、聯絡）', DUCK, 5, 'mid', ['W05', 'W06'], None),
+    ('W08', '設計', '會員與報修流程畫面設計', DUCK, 3, 'mid', ['W04', 'W05'], None),
+    ('W09', '設計', '客服後台畫面設計', DUCK, 2, 'mid', ['W04'], None),
     ('W10', '架構', '技術架構與部署環境（主機、CI、網域）', DUCK, 2, 'low', ['W01'], None),
-    ('W11', '架構', '住戶登入方案（身分綁定戶別、OTP）', LEE, 3, 'high', ['W04'], None),
-    ('W12', '架構', '資料庫與 API 設計（住戶、戶別、保固、報修單）', LEE, 3, 'mid', ['W04'], None),
+    ('W11', '架構', '住戶登入方案（身分綁定戶別、OTP）', DUCK, 3, 'high', ['W04'], None),
+    ('W12', '架構', '資料庫與 API 設計（住戶、戶別、保固、報修單）', DUCK, 3, 'mid', ['W04'], None),
     ('W13', '開發', '前台頁面切版與內容管理', DUCK, 6, 'mid', ['W07', 'W10'], '前台'),
     ('W14', '開發', 'SEO：meta、結構化資料、sitemap、301 轉址表', DUCK, 2, 'low', ['W02', 'W13'], None),
     ('W15', '開發', '會員頁：登入、我的戶別、保固資訊', DUCK, 4, 'mid', ['W08', 'W11', 'W12'], '會員'),
     ('W16', '開發', '線上報修：填單、照片上傳、進度追蹤', DUCK, 5, 'mid', ['W08', 'W12'], '報修服務'),
-    ('W17', '開發', '住戶與報修 API 實作', LEE, 6, 'mid', ['W12'], None),
-    ('W18', '開發', '客服後台：派工、狀態更新、滿意度電訪紀錄', LEE, 6, 'mid', ['W09', 'W17'], '客服後台'),
-    ('W19', '開發', 'winshop／monday 資料匯入與同步', LEE, 5, 'high', ['W03', 'W17'], 'winshop'),
-    ('W20', '開發', '報修受理與進度通知（簡訊／Email／LINE）', LEE, 2, 'mid', ['W17'], None),
-    ('W21', '上線', '內容搬遷與客戶校稿', JARED, 3, 'mid', ['W13'], None),
+    ('W17', '開發', '住戶與報修 API 實作', DUCK, 6, 'mid', ['W12'], None),
+    ('W18', '開發', '客服後台：派工、狀態更新、滿意度電訪紀錄', DUCK, 6, 'mid', ['W09', 'W17'], '客服後台'),
+    ('W19', '開發', 'winshop／monday 資料匯入與同步', DUCK, 5, 'high', ['W03', 'W17'], 'winshop'),
+    ('W20', '開發', '報修受理與進度通知（簡訊／Email／LINE）', DUCK, 2, 'mid', ['W17'], None),
+    ('W21', '上線', '內容搬遷與客戶校稿', DUCK, 3, 'mid', ['W13'], None),
     ('W22', '上線', '整合測試與客戶驗收（UAT）', DUCK, 4, 'mid', ['W14', 'W15', 'W16', 'W18', 'W19', 'W20', 'W21'], None),
     ('W23', '上線', '正式上線：DNS 切換、301、GA／Search Console', DUCK, 1, 'low', ['W22'], None),
     ('W24', '上線', '上線後兩週觀察與修正', DUCK, 3, 'mid', ['W23'], None),
     ('W25', '之後', '客服／報修 App 規劃', DUCK, 2, 'high', ['W24'], 'App'),
     ('W26', '之後', '套裝化：多租戶給其他建商、產品命名', DUCK, 3, 'high', ['W24'], '套裝化'),
+    # 2026-11-23 依 gw-fumao docs/delivery-notes.md「尚未實作」補上的上線後工作
+    ('W27', '上線後', 'S3、SES 實環境驗證（隨 gw 系列搬上 EKS）', LEE, 1, 'mid', ['W23'], None),
+    ('W28', '上線後', '我的派工：維修人員手機版面（/ops 現場端）', DUCK, 4, 'mid', ['W18'], None),
+    ('W29', '上線後', '案件備註：客服手寫進度，帶進客服報表', DUCK, 1, 'low', ['W18'], None),
+    ('W30', '上線後', '報修通知失敗或逾時自動重寄排程', DUCK, 1, 'low', ['W20'], None),
+    ('W31', '上線後', '員工 Google 登入', DUCK, 1, 'low', ['W18'], None),
+    ('W32', '上線後', 'GTM 載入（只在 production，依網站設定）', DUCK, 0.5, 'low', ['W23'], None),
+    ('W33', '之後', '官網內容的版本、預覽、排定發布', DUCK, 3, 'mid', ['W21'], None),
 ]
+
+# 2026-11-23 依 gw-fumao（docs/delivery-notes.md、10/05 後 202 個 commit）標記的進度；官網 10/28 上線。
+# 沒列的是待辦。migrate 只會把 Sheet 上的狀態往前推（待辦 → 進行中 → 待確認 → 完成），不會倒退。
+# 2026-11-23 依三組程式碼查證補上（每項附 commit 或文件證據；可信度低的不改）。
+STATUS = {
+    **{c: 'done' for c in ['W01', 'W02', 'W03', 'W04', 'W05', 'W06', 'W07', 'W08', 'W09', 'W10', 'W12', 'W13', 'W14',
+                           'W16', 'W17', 'W18', 'W20', 'W22', 'W23', 'W24']},
+    'W11': 'doing',  # 住戶登入已做（access／refresh 輪替），註冊與戶別綁定還沒
+    'W15': 'done',   # a2bd5df 10/28 /member 住戶入口（登入、我的戶別、保固概覽）＋案件查詢，已上 prd（陽春版）
+    'W29': 'review', # bb02f8e 11/11 案件備註＋帶進客服報表，只上到 qas、還沒上 prd
+    'W32': 'done',   # 7da8926 11/02 GTM 只在 production 載入，已上 prd（GTM 容器尚未建立）
+    'W19': 'doing',  # 住戶名冊匯入已做；winshop／monday 持續同步未見實作
+    'W21': 'doing',  # 本機已匯入，dev／qas／prd 待匯入
+    'W27': 'doing',  # Lee 11/18–19 已加 gw-fumao 的 Pod Identity、S3、SES
+    # Field Web（pms-field-report-web＋pms 的 git 歷史；10 月初已在 prd：field-report.eagleai.tw）
+    'F05': 'done',   # 91a53e4 10/01 Lee 工地資料夾 Excel 匯入精靈，已上 prd
+    'F06': 'done',   # f1ecab7／dc9de7d 10/02 一任務一張卡＋任務報告，已上 prd
+    'F14': 'done',   # web_proxey 已有 dev／qas／prd 三個網域，prd 正常運作
+    'F09': 'doing',  # 建案、報告端點已接；首登端點、專案設定仍是假資料
+    'F10': 'doing',  # 缺失改善、廠商回覆已做；草稿、事務所、圖說上傳未做
+    'F11': 'doing',  # 指派、廠商、回覆頁已接；草稿、事務所、專案、圖說仍是假資料
+    'F15': 'doing',  # QA-002～QA-048 修正中（dev），C／D 包還沒有
+    'F16': 'doing',  # prd 已上線、教學頁已有；沒有教育訓練紀錄
+    # ERP（sandbox-erp，依 docs/approval-requirements.md、finance-menu.md、delivery-notes.md 與 git 歷史；11 月沒有 ERP commit）
+    'E06': 'done',   # 9bc9b4f 10/06 第 5 期驗收完成、7481087 10/08 共用 dev 驗收紀錄
+    'E08': 'doing',  # 表單定義接真後端、子流程併進流程設計器；/decisions 仍未做
+    'E15': 'doing',  # 只有離線檢查腳本，期初餘額畫面還沒做
+    'E16': 'doing',  # V0052 一次性載入舊傳票快照；持續同步未做
+    'E31': 'doing',  # 只有 DEV（CI、nginx），qas／prd 還沒接
+}
 
 FIELD = [  # EagleAI Field Web（請款 ABCD 包，p-frweb）
     ('F01', '釐清', '定義 C 包、D 包的範圍與驗收標準', JARED, 1, 'high', [], None),
@@ -144,7 +182,7 @@ def to_tasks(project_id, rows):
         note = f'階段：{phase}'
         out.append(dict(
             id=f't-{code}', projectId=project_id, title=f'{code} {title}', assigneeId=who,
-            status='todo', priority='high' if code in crit else ('low' if phase == '之後' else 'mid'),
+            status=STATUS.get(code, 'todo'), priority='high' if code in crit else ('low' if phase == '之後' else 'mid'),
             dueDate='', note=note, estimateDays=days, uncertainty=unc,
             blockedReason=BLOCKED.get(code, ''), deps=','.join(f't-{d}' for d in deps), blockedAt='', startedAt='', doneAt='', order=i,
             legacy=legacy or '',

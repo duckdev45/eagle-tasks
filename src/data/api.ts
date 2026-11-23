@@ -233,7 +233,7 @@ class ProxyClient implements ApiClient {
 
 // ─── Demo (localStorage) ──────────────────────────────────────────────────────
 
-const LS_KEY = 'eagle-tasks/demo-board/v7';
+const LS_KEY = 'eagle-tasks/demo-board/v8';
 
 class LocalClient implements ApiClient {
   readonly mode = 'demo' as const;
