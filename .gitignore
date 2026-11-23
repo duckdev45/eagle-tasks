@@ -16,3 +16,4 @@ dist
 Claude outputs/
 
 *.log
+__pycache__/

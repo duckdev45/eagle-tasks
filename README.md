@@ -60,7 +60,7 @@ pnpm dev
 | `migrate_20261005()` | `projects` 加 `priority` 欄並給預設值；「請款 ABCD 包」併進「EagleAI Field Web」 |
 | `migrate_20261005_complexity()` | `projects` 加 `complexity`、`complexityNote` 兩欄並填入評估 |
 | `migrate_20261005_wbs()` | 把 P0 兩案＋內部 ERP 的完整工作分解寫進 `tasks`：接手同名舊任務（保留狀態與負責人）、補新任務、填前置關係；負責人校正過的預估不會被蓋掉，對不上的舊任務排到最後 |
-| `migrate_20261123()` | 依 GitLab 實際狀況更新：專案的名稱、狀態、摘要、複雜度、下一步、標籤改成 SEED 版本（切入建議、優先度、負責人、順序不動）；新增「EKS 平台遷移與資安合規」；補新任務；福懋官網 WBS 補 W27～W33；各任務依程式碼證據推進狀態，福懋官網的負責人依 git 歷史改派。任務狀態只會往前推，不會倒退 |
+| `migrate_20261123()` | 依 GitLab 實際狀況更新：專案的名稱、狀態、摘要、複雜度、下一步、標籤改成 SEED 版本（切入建議、優先度、負責人、順序不動）；新增「EKS 平台遷移與資安合規」；補新任務；福懋官網 WBS 補 W27～W33；各任務依程式碼證據推進狀態；負責人依 `seed/doers.py` 改成實際做的人，福懋官網整案派給 duck。任務狀態只會往前推，不會倒退 |
 
 > ⚠️ `VITE_GAS_TOKEN` 會被打包進前端 JS，所以它只是「防止路人亂寫」，不算真正的權限控管。拿到網頁的人都看得到資料。如果之後要限制只有公司帳號能看，比較好的做法是改用 Apps Script `HtmlService` 直接提供頁面，搭配「網域內使用者」部署。
 
@@ -77,7 +77,7 @@ pnpm dev
 
 ### 種子資料
 
-成員、客戶／產品線、專案、專案複雜度、一般任務的初始資料寫在 `seed/build_seed.py`（2026-11-23 依 GitLab 各 repo 的預設分支與近期 commit 更新；`eagle-vision` 不在 GitLab，維持原樣）；P0 兩案（福懋官網 `p-web`、EagleAI Field Web `p-frweb`）和內部 ERP（`p-erp`）的工作分解寫在 `seed/wbs.py`（代號 W／F／E，含階段、負責人、預估、不確定性、前置）。改完執行：
+成員、客戶／產品線、專案、專案複雜度、一般任務的初始資料寫在 `seed/build_seed.py`（2026-11-23 依 GitLab 各 repo 的預設分支與近期 commit 更新；`eagle-vision` 不在 GitLab，維持原樣）；P0 兩案（福懋官網 `p-web`、EagleAI Field Web `p-frweb`）和內部 ERP（`p-erp`）的工作分解寫在 `seed/wbs.py`（代號 W／F／E，含階段、負責人、預估、不確定性、前置）。每個任務實際是誰做的寫在 `seed/doers.py`（依各 repo 的 git 歷史盤點，只列查得到的；沒列的任務負責人維持原狀）。改完執行：
 
 ```bash
 python3 seed/build_seed.py   # 產生種子
